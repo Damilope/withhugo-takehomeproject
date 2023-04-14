@@ -1,24 +1,33 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { validateReqInput } from "../../lib/apiHelpers";
-import { EndpointResult, InsuranceApplication } from "../../lib/definitions";
+import { PrismaClient } from "@prisma/client";
+import type { NextApiRequest } from "next";
+import { validateReqQuery, wrapEndpoint } from "../../lib/apiHelpers";
+import { appMessages } from "../../lib/constants";
+import { GetInsuranceApplicationEndpoint } from "../../lib/definitions";
+import { ApplicationError } from "../../lib/helpers";
 import { validationSchemas } from "../../lib/validation";
 
-export type GetInsuranceApplicationEndpointResult =
-  EndpointResult<InsuranceApplication>;
+const prisma = new PrismaClient();
 
 /**
- * query:
- * - `applicationId` - Insurance application ID, `string`.
+ * Returns an existing insurance application.
  */
-export default function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<GetInsuranceApplicationEndpointResult>
-) {
-  const { validationSuccess, data } = validateReqInput(
-    validationSchemas.applicationIdRequired,
-    req.query.applicationId,
-    res
-  );
+const handler = wrapEndpoint<GetInsuranceApplicationEndpoint>(
+  async (req: NextApiRequest) => {
+    const data = validateReqQuery(req, validationSchemas.getApplicationQuery);
+    const application = await prisma.insuranceApplication.findFirst({
+      where: { id: data.applicationId },
+      include: { address: true, vehicles: true, beneficiaries: true },
+    });
 
-  if (!validationSuccess) return;
-}
+    if (!application) {
+      throw new ApplicationError(
+        appMessages.errors.insuranceApplicationNotFound
+      );
+    }
+
+    return application;
+  },
+  ["get"]
+);
+
+export default handler;

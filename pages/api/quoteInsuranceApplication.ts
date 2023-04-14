@@ -1,25 +1,28 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { validateReqInput } from "../../lib/apiHelpers";
-import { EndpointResult } from "../../lib/definitions";
+import type { NextApiRequest } from "next";
+import { validateReqBody, wrapEndpoint } from "../../lib/apiHelpers";
+import { QuoteInsuranceApplicationEndpoint } from "../../lib/definitions";
+import {
+  checkNewApplicationBeneficiariesCount,
+  getRandomIntInclusive,
+} from "../../lib/helpers";
 import { validationSchemas } from "../../lib/validation";
 
-export type QuoteInsuranceApplicationEndpointResult = EndpointResult<{
-  quote: string;
-}>;
+const minQuote = 20;
+const maxQuote = 100;
 
 /**
- * body:
- * - Insurance application, `{@link InsuranceApplication}`
+ * Validates an insurance application and returns a quote.
  */
-export default function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<QuoteInsuranceApplicationEndpointResult>
-) {
-  const { validationSuccess, data } = validateReqInput(
-    validationSchemas.insuranceApplicationRequired,
-    req.body,
-    res
-  );
+const handler = wrapEndpoint<QuoteInsuranceApplicationEndpoint>(
+  async (req: NextApiRequest) => {
+    const data = validateReqBody(
+      req,
+      validationSchemas.insuranceApplicationRequired
+    );
+    checkNewApplicationBeneficiariesCount(data.beneficiaries);
+    return { quote: getRandomIntInclusive(minQuote, maxQuote) };
+  },
+  ["post"]
+);
 
-  if (!validationSuccess) return;
-}
+export default handler;
