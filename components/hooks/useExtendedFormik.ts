@@ -32,7 +32,7 @@ export function useExtendedFormik<Values extends FormikValues = FormikValues>(
         setGeneralErrors(generalErrors);
       }
     },
-    []
+    [inputOnSubmit]
   );
 
   const formik = useFormik<Values>({ ...props, initialValues, onSubmit });

@@ -36,7 +36,7 @@ const InsuranceApplicationView: React.FC<InsuranceApplicationViewProps> = (
       setApplication(updatedApplication);
       setShowForm(false);
     },
-    [showForm]
+    [application]
   );
 
   return (
